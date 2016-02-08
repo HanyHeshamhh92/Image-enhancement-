@@ -1,0 +1,215 @@
+import java.awt.EventQueue;
+import javax.swing.JFrame;
+import java.awt.Image;
+import java.io.File;
+import java.io.FileWriter;
+
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.Font;
+import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.awt.image.RenderedImage;
+import java.awt.event.ActionEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
+import org.opencv.core.Core;
+import org.opencv.core.Mat;
+import org.opencv.core.*;
+import org.opencv.imgcodecs.*;
+import org.opencv.imgproc.Imgproc;
+
+import javax.swing.border.EtchedBorder;
+
+public class Gui {
+
+	private JFrame frame;
+	private JTextField Before;
+	private JTextField After;
+	private JTextField Bri;
+	private JTextField Sharp;
+	private JLabel label1 ; 
+	private JLabel label2 ; 
+	private String path;
+	private ImageIcon MyImage;
+	 static int width;
+	 static int height;
+	 static double beta = 60;
+	 int value = 0;
+	 int value2 = 0;
+	public static void main(String[] args) {
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					Gui window = new Gui();
+					window.frame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	
+	public Gui() {
+		initialize();
+	}
+
+	// Methode to resize imageIcon with the same size of a Jlabel 
+	public ImageIcon ResizeImage(String ImagePath , JLabel label)
+	{
+		MyImage = new ImageIcon(ImagePath); 
+		Image img = MyImage.getImage();
+		Image newImg = img.getScaledInstance(label.getWidth(), label.getHeight(), Image.SCALE_SMOOTH);
+		ImageIcon image = new ImageIcon(newImg); 
+		return image; 
+	}
+	private void initialize() {
+		frame = new JFrame();
+		frame.setResizable(false);
+		frame.setBounds(100, 100, 758, 519);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.getContentPane().setLayout(null);
+		
+		
+		//Labels_For_Image
+		
+		JLabel label1 = new JLabel("");
+		label1.setBounds(10, 42, 325, 301);
+		frame.getContentPane().add(label1);
+		
+		JLabel label2 = new JLabel("");
+		label2.setBounds(417, 42, 325, 301);
+		frame.getContentPane().add(label2);
+		
+		// TextFields_For_Images
+		Before = new JTextField();
+		Before.setFont(new Font("Bell MT", Font.BOLD, 15));
+		Before.setEditable(false);
+		Before.setText("Before Editing ");
+		Before.setBounds(93, 11, 104, 20);
+		frame.getContentPane().add(Before);
+		Before.setColumns(10);
+		
+		After = new JTextField();
+		After.setText("After Editing ");
+		After.setFont(new Font("Bell MT", Font.BOLD, 15));
+		After.setEditable(false);
+		After.setColumns(10);
+		After.setBounds(513, 11, 97, 20);
+		frame.getContentPane().add(After);
+		
+		
+		
+		
+
+		
+		//TestFields_For_Sliders
+		Bri = new JTextField();
+		Bri.setText("Brightness");
+		Bri.setFont(new Font("Bell MT", Font.BOLD, 15));
+		Bri.setEditable(false);
+		Bri.setColumns(10);
+		Bri.setBounds(63, 410, 76, 20);
+		frame.getContentPane().add(Bri);
+		
+		Sharp = new JTextField();
+		Sharp.setText("Sharpness");
+		Sharp.setFont(new Font("Bell MT", Font.BOLD, 15));
+		Sharp.setEditable(false);
+		Sharp.setColumns(10);
+		Sharp.setBounds(567, 410, 76, 20);
+		frame.getContentPane().add(Sharp);
+		
+		//Button_For_Photo_Upload
+		JButton btnUploadImage = new JButton("Upload Image");
+		btnUploadImage.addActionListener(new ActionListener() {
+			//Action when button pressed
+			public void actionPerformed(ActionEvent arg0) {
+				   JFileChooser file = new JFileChooser();
+			          file.setCurrentDirectory(new File(System.getProperty("user.home")));
+			          //filter the files
+			          FileNameExtensionFilter filter = new FileNameExtensionFilter("*.Images", "jpg","gif","png");
+			          file.addChoosableFileFilter(filter);
+			          int result = file.showSaveDialog(null);
+			          if(result == JFileChooser.APPROVE_OPTION){
+			              File selectedFile = file.getSelectedFile();
+			              path = selectedFile.getAbsolutePath();
+			              label1.setIcon(ResizeImage(path , label1));
+			              label2.setIcon(ResizeImage(path,label2));
+
+			          }
+			          else if(result == JFileChooser.CANCEL_OPTION){
+			              System.out.println("No File Select");
+			          }
+			        				
+			}
+		});
+		btnUploadImage.setFont(new Font("Bell MT", Font.BOLD, 13));
+		btnUploadImage.setBounds(299, 377, 130, 31);
+		frame.getContentPane().add(btnUploadImage);
+		
+		//Sliders
+				JSlider Bright = new JSlider();
+				Bright.setMinimum(-3);
+				Bright.setMajorTickSpacing(100);
+				Bright.setValue(0);
+				Bright.setMaximum(3);
+				Bright.addChangeListener(new ChangeListener() {
+					public void stateChanged(ChangeEvent arg0) {
+						 value = Bright.getValue();
+						 if (value == 0)
+						 {
+							 value =1;
+						 }
+						 try{
+					         System.loadLibrary( Core.NATIVE_LIBRARY_NAME );
+					         Mat source =  Imgcodecs.imread(path,Imgcodecs.CV_LOAD_IMAGE_COLOR);
+					         Mat destination = new Mat(source.rows(),source.cols(),
+					         
+					         source.type());
+					         source.convertTo(destination, -1, value, beta);
+					         Imgcodecs.imwrite("test.jpg", destination);
+				             label2.setIcon(ResizeImage("test.jpg",label2));
+					      }catch (Exception e) {
+					         System.out.println("error: " + e.getMessage());
+					      }
+					}
+				});
+				Bright.setBounds(10, 441, 200, 26);
+				frame.getContentPane().add(Bright);
+				
+				
+				JSlider Contrast = new JSlider();
+				Contrast.setValue(0);
+				Contrast.setMinimum(-3);
+				Contrast.setMaximum(3);
+				Contrast.addChangeListener(new ChangeListener() {
+					public void stateChanged(ChangeEvent arg0) {
+						 value2 = Contrast.getValue();
+						 if (value2 == 0)
+						 {
+							 value2 =1;
+						 }
+						 try{
+					         System.loadLibrary( Core.NATIVE_LIBRARY_NAME );
+					         Mat source = Imgcodecs.imread(path,
+					        Imgcodecs.CV_LOAD_IMAGE_COLOR);
+					         Mat destination = new Mat(source.rows(),source.cols(),source.type());
+					         Imgproc.GaussianBlur(source, destination, new Size(0,0), 10);
+					         Core.addWeighted(source, 1.5, destination, value2, 0, destination);
+					         Imgcodecs.imwrite("test.jpg", destination);
+				              label2.setIcon(ResizeImage("test.jpg",label2));
+					      }catch (Exception e) {
+					      }
+					}
+					
+				});
+				Contrast.setBounds(511, 441, 200, 26);
+				frame.getContentPane().add(Contrast);
+				
+				
+		 
+	}
+}
